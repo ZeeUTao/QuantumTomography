@@ -17,7 +17,7 @@ files = sorted((fn for fn in os.listdir(folder+'//') if fn.endswith('.csv')))
 
 
 def matrix_histogram_tao(M, xlabels=None, ylabels=None, title=None, limits=None,
-                     colorbar=False, fig=None, ax=None):
+                     colorbar=True, fig=None, ax=None):
     """
     Draw a histogram for the matrix M, with the given x and y labels and title.
 
@@ -89,7 +89,7 @@ def matrix_histogram_tao(M, xlabels=None, ylabels=None, title=None, limits=None,
         fig = plt.figure(figsize=(10,8))
         ax = Axes3D(fig, azim=-32, elev=74)
 
-    ax.view_init(azim=-32,elev= 16)
+    ax.view_init(azim=-40,elev= 34)
 
     bar = ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=colors,alpha=0.9,edgecolor='white', linewidth=0.5)
     #bar = ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=colors, alpha=0.9)
@@ -101,13 +101,13 @@ def matrix_histogram_tao(M, xlabels=None, ylabels=None, title=None, limits=None,
     ax.axes.w_xaxis.set_major_locator(plt.IndexLocator(1, bar_width/2))
     if xlabels:
         ax.set_xticklabels(xlabels)
-    ax.tick_params(axis='x', labelsize=14)
+    ax.tick_params(axis='x', labelsize=10)
 
     # y axis
     ax.axes.w_yaxis.set_major_locator(plt.IndexLocator(1, bar_width/2))
     if ylabels:
         ax.set_yticklabels(ylabels)
-    ax.tick_params(axis='y', labelsize=14)
+    ax.tick_params(axis='y', labelsize=10)
 
     # z axis
     ax.axes.w_zaxis.set_major_locator(plt.IndexLocator(1, 0.5))
@@ -253,7 +253,7 @@ def tomo_mat(filename=files[1],ref_filename=files[0],correct=True):
     return mat32
 
 
-def get_rho(filename=files[1],ref_filename=files[0],correct=True):
+def get_erho(filename=files[1],ref_filename=files[0],correct=True):
     mat = tomo_mat(filename,ref_filename,correct)
     rho = Qobj(qst(mat, 'tomo')).unit()
     return rho.full()
@@ -268,32 +268,49 @@ def test_qpt(filesList=files[1:5],ref_filename=files[0],correct=True):
         ops = [np.eye(2), Xpi2, Ypi2, Xpi]
         Us = tensor_combinations(ops, Nqubits)
         rho = np.zeros((2**Nqubits, 2**Nqubits))
+        # initial as |0><0| start state U|0><0|U.dag()
         rho[0, 0] = 1
         rhos = [dot3(U, rho, U.conj().T) for U in Us]
         return rhos
     Erhos =[]
     rhos = get_rhos(Nqubits = 1)
     for files in filesList:
-        erho = get_rho(files,ref_filename,correct)
+        erho = get_erho(files,ref_filename,correct)
         Erhos.append(erho)
     Erhos = np.array(Erhos)
     chi = qpt(rhos, Erhos, T='sigma',return_all=False)
     return chi
 
-interval = 5
 
-for i in range(6):
-    step = 5*i
-    chi = test_qpt(filesList=files[1+step:5+step],ref_filename=files[0+step])
-    op_label = [["i", "x", "y", "z"]]
-    # fig = plt.figure(figsize=(8,4))
-    # ax = fig.add_subplot(121,projection='3d')
-    # qpt_plot_combined(np.real(chi), op_label,ax=ax)
-    # ax = fig.add_subplot(122,projection='3d')
-    # qpt_plot_combined(np.imag(chi), op_label,ax=ax)
-    qpt_plot_combined(chi, op_label)
-    print(chi)
+def qpt_run0307():
+    interval = 5
 
+    fig = plt.figure(figsize=(12,6))
+    order = ['a','b','c','d']
+    def set_figorder(ax, order='a',x=0.2, y= 0.95):
+        ax.set_title(order, x=x, y=y, fontsize=14)
+        return
+
+    for idx,i in enumerate([0,2,4,5]):
+        step = 5*i
+        chi = test_qpt(filesList=files[1+step:5+step],ref_filename=files[0+step])
+        op_label = ["I", "X", "Y", "Z"]
+
+        ax = fig.add_subplot(2,4,2*idx+1,projection='3d')
+        set_figorder(ax, order=order[idx])
+        matrix_histogram_tao(np.real(chi),xlabels=op_label, ylabels=op_label,ax=ax)
+        ax.set_zlim3d(-1, 1)
+
+
+        ax = fig.add_subplot(2,4,2*idx+2,projection='3d')
+        matrix_histogram_tao(np.imag(chi), xlabels=op_label, ylabels=op_label,ax=ax)
+        ax.set_zlim3d(-1, 1)
+        fig.tight_layout()
+        #matrix_histogram_tao(chi, xlabels=op_label, ylabels=op_label)
+
+    return
+
+qpt_run0307()
 
 plt.show()
 
