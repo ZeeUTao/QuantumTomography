@@ -17,7 +17,7 @@ files = sorted((fn for fn in os.listdir(folder+'//') if fn.endswith('.csv')))
 
 
 def matrix_histogram_tao(M, xlabels=None, ylabels=None, title=None, limits=None,
-                     colorbar=True, fig=None, ax=None):
+                     colorbar=False, fig=None, ax=None):
     """
     Draw a histogram for the matrix M, with the given x and y labels and title.
 
@@ -250,6 +250,8 @@ def tomo_mat(filename=files[1],ref_filename=files[0],correct=True):
         p1list = get_newp1(p1list,ref0, ref1)
     p0list = 1 - p1list
     mat32 = np.array([p0list,p1list]).T
+    # format:
+    # [[1,0],[1,0],[1,0]]
     return mat32
 
 
@@ -307,12 +309,42 @@ def qpt_run0307():
         ax.set_zlim3d(-1, 1)
         fig.tight_layout()
         #matrix_histogram_tao(chi, xlabels=op_label, ylabels=op_label)
-
     return
 
-qpt_run0307()
+def qpt_run0423():
+    interval = 5
 
-plt.show()
+    fig = plt.figure(figsize=(8,6))
+    order = ['a','b','c','d']
+    def set_figorder(ax, order='a',x=0.2, y= 0.95):
+        ax.set_title(order, x=x, y=y, fontsize=14)
+        return
+
+    for idx,i in enumerate([0]):
+        step = 5*i
+        chi = test_qpt(filesList=files[1+step:5+step],ref_filename=files[0+step])
+        op_label = ["I", "X", "Y", "Z"]
+        
+        ax = fig.add_subplot(1,1,2*idx+1,projection='3d')
+        set_figorder(ax, order=order[idx])
+        matrix_histogram_complex((chi),xlabels=op_label, ylabels=op_label,ax=ax)
+        
+        # ax = fig.add_subplot(1,2,2*idx+1,projection='3d')
+        # set_figorder(ax, order=order[idx])
+        # matrix_histogram_tao(np.real(chi),xlabels=op_label, ylabels=op_label,ax=ax)
+        # ax.set_zlim3d(-1, 1)
+
+
+        # ax = fig.add_subplot(1,2,2*idx+2,projection='3d')
+        # matrix_histogram_tao(np.imag(chi), xlabels=op_label, ylabels=op_label,ax=ax)
+        # ax.set_zlim3d(-1, 1)
+        # fig.tight_layout()
+        #matrix_histogram_tao(chi, xlabels=op_label, ylabels=op_label)
+    return chi
+    
+# qpt_run0307()
+
+# plt.show()
 
 
 # test_qst_0307()
