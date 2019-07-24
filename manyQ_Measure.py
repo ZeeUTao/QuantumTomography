@@ -24,3 +24,42 @@ def tunnelingN_peach(qubits, data):
         res_store[i] = np.sum(binary_count == i) 
     prob = res_store/counts_num
     return prob
+
+
+def tunnelingNlevelQ_peach(qubits, data,level = 3,qNum = 1):
+    ## generated to N qubit and multi level 20190618 -- ZiyuTao
+    qNum = len(qubits)
+    counts_num = len(np.asarray(data[0][0][0]))
+    binary_count = np.zeros((counts_num),dtype = float)
+
+    def get_meas(data0,q,Nq = level):
+        #data[0][x]   qubits[x]   x == 0,1,2,3
+        # if measure 1 then return 1
+        Is = np.asarray(data0[0])
+        Qs = np.asarray(data0[1])    
+        sigs = Is + 1j*Qs
+        
+        total = len(Is)
+        distance = np.zeros((total,Nq))
+        for i in np.arange(Nq):
+            center_i = q['center|'+str(i)+'>'][0] + 1j*q['center|'+str(i)+'>'][1]
+            distance_i = np.abs(sigs - center_i)
+            distance[:,i]=  distance_i
+        
+        tunnels = np.zeros((total,))
+        for i in np.arange(total):
+            distancei = distance[i]
+            tunneli = np.int(np.where(distancei == np.min(distancei))[0])
+            tunnels[i] = tunneli 
+        return tunnels
+
+    for i in np.arange(qNum):
+        binary_count += get_meas(data[0][i],qubits[i]) * (level**i)
+        
+
+    res_store = np.zeros((level**qNum))
+    for i in np.arange(level**qNum):
+        res_store[i] = np.sum(binary_count == i) 
+        
+    prob = res_store/counts_num
+    return prob
